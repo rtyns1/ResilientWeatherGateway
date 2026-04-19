@@ -1,0 +1,29 @@
+# Build outputs
+bin/
+obj/
+
+# IDE folders
+.vs/
+.idea/
+
+# Log files (created at runtime)
+*.log
+error.log
+weather.log
+
+# Configuration with secrets (API keys)
+appsettings.json
+appsettings.*.json
+
+# But keep the example file (if you make one)
+!appsettings.example.json
+
+# User-specific files
+*.user
+*.suo
+
+# OS junk
+Thumbs.db
+.DS_Store
+
+*.exe
