@@ -4,7 +4,10 @@ using System.Text;
 
 namespace ResilientWeatherGateway_Backend_Practice_2.Models
 {
-    internal class WeatherData
+    public class WeatherData
     {
+        public string? SourceApi { get; set; }
+        public double TemperatureC { get; set; }
+        public DateTime RetrievedAt { get; set; }
     }
 }
