@@ -62,14 +62,20 @@ CircuitBreaker.cs
               └── calls FileLogger
 
 
-Order	File	Why first
-1	Models/WeatherData.cs	No dependencies. Defines what weather data looks like.
-2	Models/ComparisonResult.cs	No dependencies. Defines comparison output.
-3	Services/IWeatherService.cs	Interface — no implementation. Defines contract.
-4	Services/CircuitBreaker.cs	No external dependencies. Can test in isolation.
-5	Services/OpenWeatherMapService.cs	Depends on IWeatherService + CircuitBreaker
-6	Services/WeatherApiService.cs	Same as above
-7	Program.cs	Depends on everything. Write last.
+| Order | File | Dependencies | Notes |
+|-------|------|--------------|-------|
+| 1 | `Models/WeatherData.cs` | None | Define data structure |
+| 2 | `Models/ComparisonResult.cs` | None | Define comparison structure |
+| 3 | `Services/IWeatherService.cs` | None | Define contract |
+| 4 | `Services/CircuitBreaker.cs` | None | Test with fake failures, no APIs |
+| 5 | `appsettings.json` | None | Template for settings (committed to Git) |
+| 6 | `appsettings.Development.json` | None | Your real API keys (NOT committed — add to .gitignore) |
+| 7 | `Helpers/ConfigurationHelper.cs` (optional) | `Microsoft.Extensions.Configuration` | Reads settings from JSON files |
+| 8 | `Services/OpenWeatherMapService.cs` | `IWeatherService`, `CircuitBreaker`, appsettings values | Uses API key from config |
+| 9 | `Services/WeatherApiService.cs` | `IWeatherService`, `CircuitBreaker`, appsettings values | Uses API key from config |
+| 10 | `Program.cs` | Everything above | Orchestrates everything |
+
+
 
 // Step 1: Read configuration from appsettings.json
 // Step 2: Create HttpClient (singleton)
@@ -131,3 +137,190 @@ they have different structures in how data is arranged — so that is where we t
 then ship it to Program.cs."
 
 **So far, i have the necessary data containers, but im still in phase one where my only concern is temperature.**
+
+## SERVICES
+
+### IWEATHER.cs
+
+It is an interface, it is a defines the contact btwn::
+-The class tht implements it. Promises to provide certain methods
+- The code that uses the class. Knows what methods are available.
+
+Now, i have to explain this in context of my project right?
+So, what does this contract mean?
+Each service will sign the contract in different ways::
+
+OpenWeatherMapService	--->"I promise I have a GetWeatherAsync method"
+WeatherApiService	---->"I also promise I have a GetWeatherAsync method"
+Program.cs	----> "I don't care which service you are. I know you both have GetWeatherAsync. I will call it the same way for both."
+
+### CircuitBreaker.cs
+What does this class do? waht is a circuit breaker?
+
+-- A resiliency design pattern used to prevent an application from repeatedly trying to execute an operation
+that is likely to fail, such as a failing external API or database cell.
+It protects system stability by tripping/opening after a failure threshhold is met, blocking requests temporarily to allow the service to recover.
+
+I have never written a circuitbreaker at all.
+So, i need to read on how to write one, and how do i test it?
+
+How do i write a manual circuit breaker?
+
+Your circuit breaker is a state machine. It can only be in one of three states at any time.
+
+**State**	   **What it means**	                                                     **What happens when a call comes in**
+Closed	   Everything is normal. The API is working (or we think it is).	Let the call through. Count failures. If failures reach 3 → move to Open.
+Open	   The API has failed too many times. It is probably broken.	    Block the call immediately. Do NOT try to call the API. Start a 30-second timer.
+HalfOpen   30 seconds have passed. Time to test if the API recovered.	Allow ONE call through. If it succeeds → move to Closed. If it fails → move back to Open.
+
+**tep 2: Define What Data You Need to Track**
+Ask yourself: "What information does the circuit breaker need to remember between calls?"
+
+Data	                        Why you need it
+Current state	            To know if you are Closed, Open, or HalfOpen
+Failure count	            To know when to open the circuit (only used in Closed state)
+Time when circuit opened	To know when 30 seconds have passed (only used in Open state)
+A lock object	            To prevent two threads from changing state at the same time
+A logger (delegate)	        To record state changes for analysis
+
+**Step 3: Write the Constructor**
+The circuit breaker needs to know how to log messages (but should not know about JsonLogger directly).
+
+Use a delegate (Action<string>) that the caller provides.
+
+Pseudocode:
+
+text
+Constructor takes an Action<string> parameter called logger
+Store it in a private field
+That is it — nothing else in the constructor
+Your job: Write the constructor. It should be very short.
+
+Step 4: Write the Main Method Signature
+The method ExecuteAsync is the only public method other classes will call.
+
+What it does: It takes a function (delegate) that represents the API call you want to protect. It returns the same type as that function.
+
+Pseudocode:
+
+text
+public async Task<T> ExecuteAsync<T>(Func<Task<T>> action)
+{
+    // All the logic goes here
+}
+Your job: Write this method signature. Leave the body empty for now.
+
+Step 5: Implement State Check (Open State)
+When a call comes in, the first thing you do is check the current state.
+
+Pseudocode for Open state:
+
+text
+Lock the object (so only one thread can do this at a time)
+    If current state is Open:
+        Calculate how many seconds have passed since _openTime
+        If 30 seconds or more have passed:
+            Change state to HalfOpen
+            Log "Open → HalfOpen"
+        Else:
+            Throw an exception saying "Circuit is open"
+Your job: Write this logic inside ExecuteAsync. Use lock (_lock) { ... }.
+
+Step 6: Try to Execute the Action
+After passing the state check, you now try to call the actual API (the action delegate).
+
+Pseudocode:
+
+text
+try
+{
+    T result = await action();  // This calls the actual API
+    // If we get here, the API call succeeded
+    // Handle success (Step 7)
+}
+catch (Exception ex)
+{
+    // If we get here, the API call failed
+    // Handle failure (Step 8)
+}
+Your job: Write this try-catch structure.
+
+Step 7: Handle Success
+If the API call succeeded, you need to update the circuit breaker's state.
+
+Pseudocode for success:
+
+text
+Lock the object
+    If current state is HalfOpen:
+        Change state to Closed
+        Log "HalfOpen → Closed"
+    Reset failure count to 0
+Return the result (the T from the action)
+Your job: Write this inside the try block, after await action().
+
+Step 8: Handle Failure
+If the API call failed, you need to update failure counts and possibly open the circuit.
+
+Pseudocode for failure:
+
+text
+Lock the object
+    If current state is HalfOpen:
+        Change state to Open
+        Record _openTime = current time
+        Log "HalfOpen → Open"
+        Throw the exception (re-throw)
+    
+    // If we get here, state must be Closed
+    Increment failure count
+    Log "Failure #X in Closed state"
+    
+    If failure count >= 3:
+        Change state to Open
+        Record _openTime = current time
+        Log "Closed → Open"
+    
+    Throw the exception (re-throw)
+Your job: Write this inside the catch block.
+
+Step 9: Test Your Circuit Breaker
+Write a temporary test in Program.cs. Do not use real APIs. Use a fake function that fails on purpose.
+
+Pseudocode for testing:
+
+text
+Create a circuit breaker with a simple logger that prints to Console
+Create a counter variable (int attempt = 0)
+
+Define a fake action:
+    Increment attempt
+    If attempt <= 3:
+        Throw an exception ("Fake failure")
+    Else:
+        Return "Success"
+
+Loop 5 times:
+    Try to call ExecuteAsync with the fake action
+    Catch and print any exception
+    Print the current state
+    Wait 1 second between calls
+Expected behavior:
+
+Attempts 1-3: Fail, state stays Closed
+
+After attempt 3: State changes to Open
+
+Attempt 4: Fails immediately (circuit open), no attempt to call fake action
+
+Attempt 5: Same
+
+After 30 seconds (you can temporarily change _openDurationSeconds to 5 for testing): Next call succeeds, state changes back to Closed
+
+Your job: Write this test. Run it. Fix bugs until it works.
+
+Step 10: Add Thread Safety (You Already Have)
+The lock statements you added in Steps 5, 7, and 8 are what make the circuit breaker thread-safe. Without them, two simultaneous API calls could corrupt the state.
+
+Your job: Ensure every place that reads or writes to _state, _failureCount, or _openTime is inside a lock (_lock) block.
+
