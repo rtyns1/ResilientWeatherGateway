@@ -324,3 +324,72 @@ The lock statements you added in Steps 5, 7, and 8 are what make the circuit bre
 
 Your job: Ensure every place that reads or writes to _state, _failureCount, or _openTime is inside a lock (_lock) block.
 
+
+Now, its is paramount that u test the your code and make sure whenever possible.
+Im not the best at testing, so im goign to be practicing heavily. Starting with testing the circuit breaker.
+I will write the testing code and paste it here, with explanation.
+
+**21st April 2026, Tuesday**
+
+It has taken me an extremely long time to figure out how to write the testing for the Circuit breaker, i dont even think i have understood everything.
+But, i am spending too much time here.
+So, my next problem i shall have to tackle extreme testing, handle asynchronous lambda expressions, and implementing some search algorithmsand data organisation,
+and also use some data structures like dicts lists , dive more into asynchronous programming, conditionals, and some intro to algorithms.
+All these are to be applied to a problem. As i have done here.
+
+THIS IS THE CIRCUITBREAKER TEST::
+```csharp
+using System;
+using System.Threading.Tasks;
+using ResilientWeatherGateway_Backend_Practice_2.Services;
+
+namespace ResilientWeatherGateway_Backend_Practice_2
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            var cb = new CircuitBreaker(msg => Console.WriteLine(msg));
+            int attempt = 0;
+            
+            Func<Task<string>> fakeAction = async () =>
+            {
+                attempt++;
+                if (attempt <= 3)
+                {
+                    throw new Exception("Failure");
+                }
+                return "Success";
+            };
+
+            for (int i = 0; i < 4; i++)
+            {
+                try
+                {
+                    string result = await cb.ExecuteAsync(fakeAction);
+                    Console.WriteLine($"Call {i} succeeded: {result}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Call {i} failed: {ex.Message}");
+                }
+            }
+            
+            Console.WriteLine("Waiting 32 seconds...");
+            await Task.Delay(32000);
+
+            try
+            {
+                string result = await cb.ExecuteAsync(fakeAction);
+                Console.WriteLine($"After wait, succeeded: {result}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"After wait, failed: {ex.Message}");
+            }
+        }
+    }
+}
+```
+It was a pain in the ass to write, and i havent understood it fully so i will be back here.
+
