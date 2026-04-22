@@ -391,5 +391,101 @@ namespace ResilientWeatherGateway_Backend_Practice_2
     }
 }
 ```
+
 It was a pain in the ass to write, and i havent understood it fully so i will be back here.
 
+**LOGOUT***--
+--I need to write the files in order so tmrw write the appsetting.json files, then write the configurationHelper then write the rest of the service files.
+Document work neatl, and heavy testing. Finish phase 1 and 2 tomorrow on the 22nd April.
+the pseudocode for the OpenWeatherApiService:::
+
+
+CLASS OpenWeatherMapService IMPLEMENTS IWeatherService
+
+FIELDS:
+    _httpClient (HttpClient, readonly)
+    _circuitBreaker (CircuitBreaker, readonly)
+    _apiKey (string, readonly)
+    _baseUrl (string, readonly)
+
+CONSTRUCTOR (httpClient, circuitBreaker, apiKey, baseUrl):
+    Store each parameter in its corresponding field
+
+METHOD GetWeatherAsync(city):
+    // Step 1: Build the URL
+    url = _baseUrl + "?q=" + city + "&units=metric&appid=" + _apiKey
+    =
+    // Step 2: Make the API call through circuit breaker
+    jsonString = await _circuitBreaker.ExecuteAsync(async () =>
+    {
+        return await _httpClient.GetStringAsync(url);
+    })
+    =
+    // Step 3: Extract temperature from JSON
+    // You need to figure out how to parse: {"main":{"temp":28.5}}
+    temperature = Extract from jsonString["main"]["temp"]
+    =
+    // Step 4: Return WeatherData
+    RETURN new WeatherData
+        SourceApi = "OpenWeatherMap"
+        TemperatureC = temperature
+        RetrievedAt = DateTime.UtcNow
+    END OF PSEUDOCODE
+
+**22nd April 2026**
+
+ ### SETTINGS
+
+--Now, why do we need to write appsettings.development.json? why do i need to write appsettings.json?
+--They store settings separate from your code.
+--They use JSON format, same as API responses that i have been deserializing.
+
+appsettings.json--->	Default settings for the application (committed to Git)
+appsettings.Development.json--->	Overrides for your local machine (NOT committed)
+
+Without these files, i will have to hardcode API keys in code, which makes my API keys public, not exactly what you would want.
+Changeing location = recompiling.
+Different settings for different environments(not entirely what this means)
+
+
+OOOh, apsettings.Production.json -- for server
+appsettings.Development.json --- for me, the developer, testing.
+
+
+WHAT DOES SETTINGS MEAN?
+-Any value that can change without me rewriting code, any value that can differ btwn environments, environments example ineclude my laptop, vs server, vs another laptop.
+-Any value that should not be hardcoded because it would be a pain to update-- will need an unecessary and painful amount of refactoring.
+
+Some examples of settings in the context of this problem::
+-API Key, City name, Base URL, CircuitBreaker failure threshold, Log file path, Database connection string.
+
+So, now that i understand what exactly these files mean, now comes the hard part:: actually figuring how to write them.
+
+
+TO SAY THAT IVE BEEN TAKEN TO THE DEPTHS OF CONFUSION WOULD BE AN UNDERSTATEMENT.
+ This is a summary of wahts been done::
+
+
+ We built a ConfigurationHelper class that reads settings from JSON files. The program crashed because it could not find appsettings.json at runtime.
+
+Root cause: The JSON files were in the project root (where you edit them), but the program runs from bin/Debug/net10.0/ (where the compiled .exe lives). The files were not being copied automatically.
+
+Solution: Added <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory> to the .csproj file. This tells .NET to copy the JSON files to the output folder every time you build.
+
+How To Debug "File Not Found" Errors In General
+Step	Action
+1	Read the full error message. It tells you the exact path it is looking for.
+2	Print Environment.CurrentDirectory to see where your program thinks it is running.
+3	Manually check if the file exists at that path.
+4	If not, figure out why the file is missing (not copied, wrong name, wrong location).
+5	Fix the build process (.csproj settings) or copy files manually.
+Rule: Never assume a file is where you think it is. Print the path. Verify.
+
+
+
+LEARN HOW TO UNDESTAND ERRORS, AND I NOW TRACK ALL THE CONCEPTS I ENCOUNTER AND NEED TO READ ON IN THE CONCEPTS_LOG.md file.
+
+ALSO, IMPLEMENTED A SUCCESFUL TESTING ROUND FOR BOTH THE API, THE CONFIGURATION AND THE CIRCUITBREAKER.
+I AM FAR FROM UNDERSTANDING, I STILL CANT WRITE CODE INDEPENDENTLY 100% I NEED TO READ AND IM CONSTANTLY WRONG.
+ALWAYS REMEMBER I SHOW THE FINISHED VERSION, SO YOU NEVER GET TO SEE JUST HOW MUCH I TRUGGLE TO COME UP WITH A SOLUTION.
+    

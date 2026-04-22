@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using System.Text;
 using System.Collections.Generic;
 using ResilientWeatherGateway_Backend_Practice_2.Services;
+using ResilientWeatherGateway_Backend_Practice_2.Helpers;
+
 
 namespace ResilientWeatherGateway_Backend_Practice_2
 {
@@ -52,7 +54,17 @@ namespace ResilientWeatherGateway_Backend_Practice_2
             {
                 Console.WriteLine($"After wait, failed: {ex.Message}");
             }
-            
+
+            var config = new ConfigurationHelper();
+
+            string city = config.GetValue<string>("City");
+            string openWeatherBaseUrl = config.GetValue<string>("OpenWeatherMap:BaseUrl");
+            string openWeatherApiKey = config.GetValue<string>("OpenWeatherMap:ApiKey");
+
+            Console.WriteLine($"City: {city}");
+            Console.WriteLine($"OpenWeatherMap BaseUrl: {openWeatherBaseUrl}");
+            Console.WriteLine($"OpenWeatherMap ApiKey length: {openWeatherApiKey?.Length ?? 0}");
+
         }
     }
 
