@@ -489,3 +489,154 @@ ALSO, IMPLEMENTED A SUCCESFUL TESTING ROUND FOR BOTH THE API, THE CONFIGURATION 
 I AM FAR FROM UNDERSTANDING, I STILL CANT WRITE CODE INDEPENDENTLY 100% I NEED TO READ AND IM CONSTANTLY WRONG.
 ALWAYS REMEMBER I SHOW THE FINISHED VERSION, SO YOU NEVER GET TO SEE JUST HOW MUCH I TRUGGLE TO COME UP WITH A SOLUTION.
     
+**23rd April 2025**
+
+---Delete this pseudocode after im done,
+Some notes here:::
+Complete Pseudocode (Step-by-Step)
+text
+CLASS OpenWeatherMapService IMPLEMENTS IWeatherService
+
+FIELDS:
+    _httpClient (HttpClient, readonly)
+    _circuitBreaker (CircuitBreaker, readonly)
+    _apiKey (string, readonly)
+    _baseUrl (string, readonly)
+
+CONSTRUCTOR (httpClient, circuitBreaker, apiKey, baseUrl):
+    Store each parameter in its corresponding field
+
+METHOD GetWeatherAsync(city):
+    // Step 1: Build the URL
+    url = _baseUrl + "?q=" + city + "&units=metric&appid=" + _apiKey
+
+    // Step 2: Make the API call through circuit breaker
+    // The circuit breaker expects a delegate that returns Task<string>
+    jsonString = await _circuitBreaker.ExecuteAsync(async () =>
+    {
+        return await _httpClient.GetStringAsync(url);
+    })
+
+    // Step 3: Extract temperature from JSON
+    // Parse jsonString to get the numeric value at path "main.temp"
+    // You will use System.Text.Json.JsonDocument
+    // Steps inside:
+    //   3a: using JsonDocument doc = JsonDocument.Parse(jsonString)
+    //   3b: JsonElement root = doc.RootElement
+    //   3c: JsonElement main = root.GetProperty("main")
+    //   3d: JsonElement tempElement = main.GetProperty("temp")
+    //   3e: double temperature = tempElement.GetDouble()
+
+    // Step 4: Return WeatherData
+    RETURN new WeatherData
+        SourceApi = "OpenWeatherMap"
+        TemperatureC = temperature
+        RetrievedAt = DateTime.UtcNow
+What You Must Add (Not In Pseudocode Above)
+Missing piece	Where to add it
+using System.Text.Json;	Top of file
+Exception handling for missing properties	Inside Step 3 (if "main" or "temp" missing, throw meaningful error)
+Null check for jsonString	Before parsing
+Common Mistakes To Avoid
+Mistake	Why it happens	What to read
+Forgetting await before _httpClient.GetStringAsync	GetStringAsync returns Task, not string	"C# await operator"
+Using JsonSerializer.Deserialize<T> without a class	You do not have a class for the response	"JsonDocument vs JsonSerializer"
+Accessing GetProperty on wrong element	You skipped root or main	"JsonElement GetProperty example"
+Not disposing JsonDocument	Memory leak	"C# using statement for JsonDocument"
+
+
+once im done with this project, i will take a shit ton of time explaining the aspects of this program, a shit ton of time Because if i skip the explanation, what have i leanr?
+
+
+1. What the Circuit Breaker’s ExecuteAsync Method Does (Plain English)
+Your CircuitBreaker.ExecuteAsync<T> is a protective wrapper. It takes any action (like calling a weather API) and runs it, but with safety rules:
+
+If the circuit is Closed (normal), it runs the action. If the action fails, it counts the failure. After 3 failures, it opens the circuit.
+
+If the circuit is Open, it blocks the action immediately (throws an exception) without even trying to call the API. This gives the failing API time to recover.
+
+After 30 seconds, it moves to Half‑Open and allows one test call. If that test call succeeds, the circuit closes again; if it fails, it goes back to Open.
+
+In short: ExecuteAsync is a security guard that decides whether to let your API call through or block it, based on past failures.
+
+2. What Is a Delegate Type? (Analogy)
+A delegate is like a remote control that points to a method. Instead of pressing a physical button, you “invoke” the delegate, and it runs the method it points to.
+
+Real‑world analogy:
+Imagine you have a list of tasks you want a robot to do. You write the tasks on pieces of paper: “make coffee”, “open door”, “fetch book”. You give the robot a slot where it expects a piece of paper. The robot doesn’t care what is written on the paper – it just does whatever the paper says. The paper is the delegate. The robot’s slot is the method parameter that takes a delegate.
+
+In C#, a delegate type defines the shape of the method it can point to: what parameters it takes and what it returns. For example, Func<Task<T>> is a delegate that points to a method that takes no parameters and returns Task<T> (an async method that eventually produces a value of type T).
+
+Why important: Delegates allow you to pass behavior (a method) as an argument to another method. That is exactly what ExecuteAsync does – you pass the API‑calling method to the circuit breaker, and the circuit breaker decides when to call it.
+
+3. What Is a Lambda Function? (Analogy)
+A lambda is a quick, unnamed method written on the spot. It’s like writing a sticky note instead of a full formal letter.
+
+Analogy:
+You need a temporary helper for a single task. Instead of hiring a full‑time employee (defining a separate named method), you just say: “Hey, do this small thing right now: add these two numbers”. That is a lambda.
+
+In C#, a lambda looks like (parameters) => { body }. For async lambdas: async (parameters) => { await something; return result; }.
+
+Why important: Lambdas let you write the API‑calling logic directly inside the argument to ExecuteAsync, without having to create a separate named method somewhere else. It keeps the code compact and readable.
+
+4. How This Applies to Your GetWeatherAsync Method
+In OpenWeatherMapService.GetWeatherAsync, you need to:
+
+Build the URL.
+
+Call _circuitBreaker.ExecuteAsync and pass it the actual HTTP request as a delegate (a lambda).
+
+The circuit breaker will then:
+
+Check if the circuit is open. If open, it throws without calling your lambda.
+
+If closed or half‑open, it invokes your lambda (calls the delegate), which makes the _httpClient.GetStringAsync request.
+
+Based on success or failure, it updates its internal state (counters, circuit state).
+
+What your lambda must do (in English):
+It must be an async lambda that takes no parameters, returns Task<string>, and inside it you await _httpClient.GetStringAsync(url) and return the resulting JSON string.
+
+Why a lambda here? Because the circuit breaker doesn’t (and shouldn’t) know anything about HttpClient or URLs. You give it a small, self‑contained piece of work (the lambda), and it executes that work under its protection.
+
+5. The Concept of “Passing a Function as an Argument”
+You have done this before without realising it:
+
+Action<string> in your CircuitBreaker constructor – that is a delegate (a function that takes a string and returns nothing). You gave it msg => Console.WriteLine(msg).
+
+Now Func<Task<T>> is similar, but it returns a Task<T>.
+
+In GetWeatherAsync, you will write:
+
+text
+string jsonString = await _circuitBreaker.ExecuteAsync( async () =>
+{
+    string result = await _httpClient.GetStringAsync(url);
+    return result;
+});
+The async () => { ... } is the lambda – a function with no name. You are passing that function to ExecuteAsync. The circuit breaker will call it when it decides it is safe.
+
+6. Summary Table
+Concept	Analogy	In Your Code
+Delegate	A remote control pointing to a method	Func<Task<T>> – points to an async method that returns T
+Lambda	A sticky‑note with instructions	async () => { await _httpClient.GetStringAsync(url); }
+ExecuteAsync	A security guard that decides when to press the remote control	It calls your lambda only if circuit is not open
+Your task	Write the instructions on the sticky‑note (lambda)	Inside GetWeatherAsync, build URL, then pass the lambda to ExecuteAsync
+7. What You Need to Do Now
+Inside GetWeatherAsync, construct the url string using _baseUrl, city, and _apiKey.
+
+Call _circuitBreaker.ExecuteAsync with an async lambda that:
+
+Uses await _httpClient.GetStringAsync(url)
+
+Returns the JSON string.
+
+Store the result (the JSON string) in a variable.
+
+Parse the JSON to extract the temperature (using JsonDocument or similar).
+
+Return a new WeatherData object.
+
+Do not worry if you don’t fully master delegates and lambdas today. You will use them many times – they become natural with repetition. For now, treat the lambda as a small block of code that you wrap in async () => { ... } and hand to the circuit breaker.
+
+Go. Write the lambda inside GetWeatherAsync. Use the pseudocode you already have. If you get a compiler error, read the message carefully – it will guide you.

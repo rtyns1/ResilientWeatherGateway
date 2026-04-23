@@ -14,7 +14,7 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
         HalfOpen // Testing :allows one call to see if an API recovered
     }
 
-    public class CircuitBreaker
+    public class CircuitBreaker 
     {
         private readonly int _failureThreshold = 3;
         private readonly int _openDurationSeconds = 30;

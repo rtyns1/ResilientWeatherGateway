@@ -35,7 +35,8 @@
 
 ---
 
-## 4. `Func<Task<T>>` Delegate
+## 4. `Func<Task<T>>` Delegate -- Heavy on this and what it means to expect a delggate
+
 
 | Aspect | Description |
 |--------|-------------|

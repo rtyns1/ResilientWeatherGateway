@@ -18,5 +18,6 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
         // parameter is string city---> both services must accept a city name.
 
 
+
     }
 }
