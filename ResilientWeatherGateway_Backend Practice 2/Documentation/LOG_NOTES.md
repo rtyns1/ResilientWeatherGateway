@@ -491,6 +491,7 @@ ALWAYS REMEMBER I SHOW THE FINISHED VERSION, SO YOU NEVER GET TO SEE JUST HOW MU
     
 **23rd April 2025**
 
+## OpenWeatherMApServices.cs---- Be very keen here
 ---Delete this pseudocode after im done,
 Some notes here:::
 Complete Pseudocode (Step-by-Step)
@@ -640,3 +641,62 @@ Return a new WeatherData object.
 Do not worry if you don’t fully master delegates and lambdas today. You will use them many times – they become natural with repetition. For now, treat the lambda as a small block of code that you wrap in async () => { ... } and hand to the circuit breaker.
 
 Go. Write the lambda inside GetWeatherAsync. Use the pseudocode you already have. If you get a compiler error, read the message carefully – it will guide you.
+
+I 100% NEED TO COME BACK HERE AND REVISIT THE WHOLE CODE
+
+jsonString = await _circuitBreaker.ExecuteAsync(async () =>
+{
+    return await _httpClient.GetStringAsync(url);
+})
+Let me break it down into pieces you already understand.
+
+What is _circuitBreaker.ExecuteAsync?
+You wrote the CircuitBreaker class. Inside it, there is a method:
+
+csharp
+public async Task<T> ExecuteAsync<T>(Func<Task<T>> action)
+This method takes one parameter called action. The type of action is Func<Task<T>>. That is a delegate – a thing that can hold a reference to a method. In your case, T will be string because you want to get a JSON string from the API.
+
+So ExecuteAsync expects you to give it a method (or a lambda) that returns Task<string>. That method will be the actual API call.
+
+What is the lambda doing?
+The lambda is:
+
+csharp
+async () =>
+{
+    return await _httpClient.GetStringAsync(url);
+}
+async () => means: this is an asynchronous lambda that takes no parameters.
+
+The body { return await _httpClient.GetStringAsync(url); } calls GetStringAsync on the HttpClient, waits for the response (that is what await does), and returns the JSON string.
+
+So the lambda is a small, unnamed function that does one thing: call the weather API and give back the JSON.
+
+Why do we pass this lambda to ExecuteAsync?
+Your circuit breaker is designed to protect any API call. It does not care what the call does – it only cares whether it succeeds or fails. So you give it a delegate (the lambda) that represents the call you want to protect.
+
+Inside ExecuteAsync, the circuit breaker will:
+
+Check the state (Closed, Open, HalfOpen).
+
+If it decides the call is allowed, it will invoke your lambda: await action().
+
+That runs your _httpClient.GetStringAsync(url) and returns the JSON.
+
+If the lambda throws an exception (e.g., network error), the circuit breaker catches it, updates its failure count, and possibly opens the circuit.
+
+So the lambda is the thing you want to retry / protect.
+
+What does jsonString = await ... do?
+The ExecuteAsync method returns a Task<T>. Here T is string because your lambda returns Task<string>. When you await it, you get the actual JSON string that came from the API. You store that in a variable named jsonString.
+
+In simple terms (no jargon)
+Imagine you have a security guard (circuit breaker). You tell the guard: “I want to go to the shop and buy milk (calling the API). Here is the exact route I will walk (the lambda).” The guard checks if it is safe (circuit closed). If yes, he lets you go and you come back with the milk (the JSON). If the shop is on fire (API failing), the guard notes that and may stop letting you go for a while.
+
+The security guard does not need to know how you buy milk – only that you will try. You give him the instructions (the lambda) and he executes them when it is safe.
+
+You cannot be VAGUE with your error descriptions.
+
+
+ so in the next topic we shall text error handling that is gracefulle, defensive and does not break encapsulation

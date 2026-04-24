@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 
 namespace ResilientWeatherGateway_Backend_Practice_2.Services
 {
-
-
     public enum Circuitstate
     {
         Closed, // Normal: calls go through , we count failures
@@ -65,11 +63,12 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                     else
                     {
                         //otherwise, if the circuit is still open, throw exception immediately.
-                        throw new Exception($"Circuit is OPEN for {_openDurationSeconds} seconds. Call blocked.");
+                        throw new BrokenCircuitException($"Circuit is OPEN for {_openDurationSeconds} seconds. Call blocked."); 
                     }
                 }
             //step 2: try to executr the API call action
             }
+
             try
             {
                 T result = await action(); //This is where the ctual API call happens
@@ -86,7 +85,6 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                     _failureCount = 0;
                 }
                 return result;
-
 
             }
             catch (Exception ex)
@@ -130,16 +128,46 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                 }
                 throw;
 
-
             }
-
-
-
-
         }
+    }
 
+    public class BrokenCircuitException: Exception
+    {
+        public BrokenCircuitException() { }
+        public BrokenCircuitException(string message) : base(message) { }
+        public BrokenCircuitException (string message, Exception inner): base(message, inner) { }
 
     }
+    /*
+     * in the OpenWeatherMapService when i call _circuitBreaker.ExecuteAsync, 3 different kinds of failures can happen:
+     * BrokenCircuitException	The circuit is open (API has failed too many times recently).	Do NOT retry immediately. Wait, or inform the user that the service is temporarily unavailable.
+       HttpRequestException	Network error, timeout, API returned 500.	Retry (the circuit breaker will count this failure).
+       JsonException	The API returned malformed JSON (maybe an error page instead of weather data).	Log and fail – retrying won't help.
+    *A generic exception is not enough, we cannot distinguish these cases.
+    *You have to parse error messages, or rely on generic catches that hide bugs.
+    *But with the BrokenCircuitException, we cn write the followin in the API classes:::
+    *catch (BrokenCircuitException)
+{
+    // Circuit is open – do not retry, just tell user "service unavailable"
+}
+catch (HttpRequestException)
+{
+    // Retry logic (circuit breaker already tracks failures)
+}
+catch (JsonException)
+{
+    // Log and abort – API returned garbage
+}
+    *CircuitBreaker has a specific job to protect external calls from hammering a failing service. IT communicates it state through exceptions. by thwoging BrokenCircuitException, it says clearly :"I am blockin this call because the cirtuit is open"
+    *The caller does not nee to know how the circuit breaker works, only that it is open.
+    *Separation of concerns and responsibilities at its finest.
+    *Throwng generic exceptions mixes concerns and the caller cannot distinguish btw circuit is open and the API has returnd a 500 error. It breaks encapsulation in a way.
+    *Encapsulation – the circuit breaker's internal state is communicated without exposing its internal logic.
+    *Maintainability – future developers will immediately understand what BrokenCircuitException means, whereas a generic Exception("circuit open") can be overlooked or misinterpreted.
+    *Testing – you can unit test the handling of each failure type independently.
+    *
+    */
 
 
 }

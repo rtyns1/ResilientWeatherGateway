@@ -98,3 +98,8 @@
 | **What you did** | Created a fake async action that fails 3 times, then succeeds. Used a loop to call it multiple times. |
 | **Why this works** | Isolates the circuit breaker logic from real APIs. Tests state transitions (Closed → Open → HalfOpen → Closed). |
 | **Search term** | *Unit testing with fake delegates in C#* |
+
+DEALING WITH JSON, PARSING, ADN FUNCTIONS LIKE   if (!root.TryGetProperty("main", out JsonElement mainElement) ||
+                !mainElement.TryGetProperty("temp", out JsonElement tempElement))
+
+graceful error handling, defensive programming and error handling that does not break encapsulation.

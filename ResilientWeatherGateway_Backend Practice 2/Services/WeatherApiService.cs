@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ResilientWeatherGateway_Backend_Practice_2.Services
 {
-    internal class WeatherApiService
+    public class WeatherApiService
     {
     }
 }

@@ -1,9 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-using System.Text;
-using System.Collections.Generic;
+﻿using ResilientWeatherGateway_Backend_Practice_2.Helpers;
+using ResilientWeatherGateway_Backend_Practice_2.Models;
 using ResilientWeatherGateway_Backend_Practice_2.Services;
-using ResilientWeatherGateway_Backend_Practice_2.Helpers;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+
 
 
 namespace ResilientWeatherGateway_Backend_Practice_2
@@ -61,10 +63,23 @@ namespace ResilientWeatherGateway_Backend_Practice_2
             string openWeatherBaseUrl = config.GetValue<string>("OpenWeatherMap:BaseUrl");
             string openWeatherApiKey = config.GetValue<string>("OpenWeatherMap:ApiKey");
 
-            Console.WriteLine($"City: {city}");
-            Console.WriteLine($"OpenWeatherMap BaseUrl: {openWeatherBaseUrl}");
-            Console.WriteLine($"OpenWeatherMap ApiKey length: {openWeatherApiKey?.Length ?? 0}");
+            HttpClient _httpClient = new HttpClient();
+            try
+            {
+                var httpClient = new HttpClient();
+                var circuitBreaker = new CircuitBreaker(msg => Console.WriteLine(msg));
+                var cb2 = new CircuitBreaker(msg => Console.WriteLine(msg));
 
+                var weatherService = new OpenWeatherMapService(_httpClient, openWeatherApiKey, openWeatherBaseUrl, cb2);
+                WeatherData weather = await weatherService.GetWeatherAsync(city);
+                Console.WriteLine($"Temperature in {city}: {weather.TemperatureC} in degrees celsius.");
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to get weather: {ex.Message}");
+            }
+            
         }
     }
 
