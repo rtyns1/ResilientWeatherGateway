@@ -1,11 +1,12 @@
-﻿using ResilientWeatherGateway_Backend_Practice_2.Models;
+﻿using AsyncDataAggregator__Backend_practice_1.Helpers;
+using ResilientWeatherGateway_Backend_Practice_2.Models;
 using ResilientWeatherGateway_Backend_Practice_2.Services;
 using System;
+using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using System.Net.Http;
 
 
 
@@ -139,11 +140,15 @@ namespace ResilientWeatherGateway_Backend_Practice_2
                 throw new Exception("Circuit breaker open: Weather API is currently unavailable.");
             }
 
-
-            catch(HttpRequestException ex)
+            catch (HttpRequestException ex)
             {
-                throw new Exception();
+                // Log the error so you know what happened
+                await FileLogger.LogErrorAsync($"OpenWeatherApiService HTTP request failed: {ex.Message}");
+
+                // Re-throw a more specific exception or just re-throw the original
+                throw new Exception($"Failed to call OpenWeatherApiService: {ex.Message}", ex);
             }
+
 
             catch (JsonException ex)
             {
