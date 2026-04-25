@@ -32,7 +32,7 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
         {
             try
             {
-                string url = _baseUrl + "?q=" + city + "$units = metric$appid" + _apiKey;
+                string url = _baseUrl + "?key=" + _apiKey + "&q=" + city + "&aqi=no";
                 string JsonString = await _circuitBreaker.ExecuteAsync<string>(async () =>   // i honestly am loosing my mind
                 {
                     return await _httpClient.GetStringAsync(url);
@@ -45,15 +45,16 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
 
                 using JsonDocument doc = JsonDocument.Parse(JsonString);
                 JsonElement root = doc.RootElement;
+                JsonElement current = root.GetProperty("current");
 
-                if (!root.TryGetProperty("main", out JsonElement mainElement) || !mainElement.TryGetProperty("temp", out JsonElement tempElement))
+                if (!current.TryGetProperty("temp_c", out JsonElement tempElement))
                 {
 
                     throw new Exception("Unable to find temperature data in API response.");
 
                 }
 
-                double temperature = tempElement.GetDouble();
+                double temperature = current.GetProperty("temp_c").GetDouble();
 
                 return new WeatherData
                 {

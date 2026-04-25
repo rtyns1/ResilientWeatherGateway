@@ -103,7 +103,7 @@ namespace ResilientWeatherGateway_Backend_Practice_2
                  */
 
 
-                // ---------------------------------------------------
+                // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
                 /*
                  * below is a defensive error handling case. it tries to get the propert "main" from the rot object. If the propert exists,
@@ -112,14 +112,12 @@ namespace ResilientWeatherGateway_Backend_Practice_2
                  *  if we cannot find "main or if we cannot find "temp " isnide whatever mainElement we got, then we throw an exception with a clear message.
                  *  This prevents code from crashing with cryptic errors like KeyNotFoundException or NullReferenceException.  It also allows us ti log and handle the problems more gracefully.
                  *  C# is a blessing for defensive programming and type safety enthusiasts.
-                 *  --------------------------------------------------------------------------------------------
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                  *  
                  */
                 if (!root.TryGetProperty("main", out JsonElement mainElement) || !mainElement.TryGetProperty("temp", out JsonElement tempElement))
                 {
-
                     throw new Exception("Unable to find temperature data in API response.");
-
                 }
 
                 double temperature = tempElement.GetDouble();

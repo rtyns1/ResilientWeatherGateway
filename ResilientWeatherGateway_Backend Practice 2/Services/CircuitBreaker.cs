@@ -59,6 +59,7 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                         //if yes, move to HalfOpen
                         _state = Circuitstate.HalfOpen;
                         _logger($"Circuit state changed : open --> HalfOpen");
+
                     }
                     else
                     {
@@ -125,9 +126,9 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                         _logger($"Circuitstate changed: closed --> open after {_failureCount} failures");
                         throw;
                     }
+
                 }
                 throw;
-
             }
         }
     }
