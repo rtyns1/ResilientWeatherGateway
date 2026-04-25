@@ -50,15 +50,22 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                 if (!current.TryGetProperty("temp_c", out JsonElement tempElement))
                 {
 
-                    throw new Exception("Unable to find temperature data in API response.");
+                    throw new Exception("Unable to find temperature data in WeatherAPI response.");
 
+                }
+                if (!current.TryGetProperty("humidity", out JsonElement humidityElement))
+                {
+                    throw new Exception("Unable to find humidity data in WeatherAPI response.");
                 }
 
                 double temperature = current.GetProperty("temp_c").GetDouble();
+                int humidity = humidityElement.GetInt32();
+
 
                 return new WeatherData
                 {
                     SourceApi = "WeatherApiService",
+                    HumidityPercent = humidity,
                     TemperatureC = temperature,
                     RetrievedAt = DateTime.UtcNow
 

@@ -115,16 +115,31 @@ namespace ResilientWeatherGateway_Backend_Practice_2
   -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                  *  
                  */
-                if (!root.TryGetProperty("main", out JsonElement mainElement) || !mainElement.TryGetProperty("temp", out JsonElement tempElement))
+                if (!root.TryGetProperty("main", out JsonElement mainElement))
                 {
-                    throw new Exception("Unable to find temperature data in API response.");
+                    throw new Exception("Unable to find 'main' object in OpenWeatherMap API response.");
+                }
+
+                if (!mainElement.TryGetProperty("temp", out JsonElement tempElement))
+                {
+                    throw new Exception("Unable to find temperature data in OpenWeatherMap response.");
+                }
+
+                if (!mainElement.TryGetProperty("humidity", out JsonElement humidityElement))
+                {
+                    // Option 1: throw an exception if humidity is required
+                    throw new Exception("Unable to find humidity data in OpenWeatherMap response.");
+                    
                 }
 
                 double temperature = tempElement.GetDouble();
+                int humidity = humidityElement.GetInt32();
+
 
                 return new WeatherData
                 {
                     SourceApi = "OpenWeatherMap",
+                    HumidityPercent = humidity,
                     TemperatureC = temperature,
                     RetrievedAt = DateTime.UtcNow
 
