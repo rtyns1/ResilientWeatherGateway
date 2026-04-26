@@ -61,11 +61,8 @@ namespace ResilientWeatherGateway_Backend_Practice_2
 
                     });
                 }
-                Console.WriteLine($"{weather1.SourceApi}: {weather1.TemperatureC}°C, Humidity: {weather1.HumidityPercent}%");
-                Console.WriteLine($"{weather2.SourceApi}: {weather2.TemperatureC}°C, Humidity: {weather2.HumidityPercent}%");
-
-
-
+                Console.WriteLine($"{weather1.SourceApi}: {weather1.TemperatureC}°C, Humidity: {weather1.HumidityPercent}%, Feels like {weather1.FeelsLikeC}°C, {weather1.Condition}");
+                Console.WriteLine($"{weather2.SourceApi}: {weather2.TemperatureC}°C, Humidity: {weather2.HumidityPercent}%, Feels like {weather2.FeelsLikeC}°C, {weather2.Condition}");
 
 
 

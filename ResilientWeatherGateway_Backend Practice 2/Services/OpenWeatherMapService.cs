@@ -131,9 +131,26 @@ namespace ResilientWeatherGateway_Backend_Practice_2
                     throw new Exception("Unable to find humidity data in OpenWeatherMap response.");
                     
                 }
+                if (!mainElement.TryGetProperty("feels_like", out JsonElement feelslikeElement))
+                {
+                    throw new Exception("Unable to find feels_like data in OpenWeatherMap response.");
+
+                }
+
+                string condition = "unknown";
+                if (root.TryGetProperty("weather", out JsonElement weatherArray) && weatherArray.GetArrayLength() > 0)
+                {
+                    JsonElement firstWeather = weatherArray[0];
+                    if (firstWeather.TryGetProperty("description", out JsonElement descElement))
+                    {
+                        condition = descElement.GetString() ?? "unknown";
+                    }
+                }
 
                 double temperature = tempElement.GetDouble();
                 int humidity = humidityElement.GetInt32();
+                double feelsLike = feelslikeElement.GetDouble();
+
 
 
                 return new WeatherData
@@ -141,12 +158,13 @@ namespace ResilientWeatherGateway_Backend_Practice_2
                     SourceApi = "OpenWeatherMap",
                     HumidityPercent = humidity,
                     TemperatureC = temperature,
+                    Condition = condition,
+                    FeelsLikeC = feelsLike,
                     RetrievedAt = DateTime.UtcNow
 
                 };
 
             }
-
             catch (BrokenCircuitException ex)
             {
                 //This is to handle scenario where circuit is open

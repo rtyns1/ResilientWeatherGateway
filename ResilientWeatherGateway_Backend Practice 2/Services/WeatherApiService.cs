@@ -19,7 +19,7 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
         private readonly string _apiKey;
         private readonly string _baseUrl;
 
-
+        
         public WeatherApiService(HttpClient _httpClient, string _apiKey, string _baseUrl, CircuitBreaker _circuitBreaker)
         {
             this._httpClient = _httpClient;
@@ -58,8 +58,19 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                     throw new Exception("Unable to find humidity data in WeatherAPI response.");
                 }
 
+                if (!current.TryGetProperty("condition", out JsonElement conditionElement))
+                {
+                    throw new Exception("Unable to find condition data in weatherAPI response.");
+                }
+
+                if (!current.TryGetProperty("feelslike_c", out JsonElement feelsLikeElement))
+                {
+                    throw new Exception("Unable to find feels like data in WeatherAPI response.");
+                }
+
                 double temperature = current.GetProperty("temp_c").GetDouble();
                 int humidity = humidityElement.GetInt32();
+                
 
 
                 return new WeatherData
@@ -67,6 +78,8 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                     SourceApi = "WeatherApiService",
                     HumidityPercent = humidity,
                     TemperatureC = temperature,
+                    FeelsLikeC = feelsLikeElement.GetDouble(),
+                    Condition = conditionElement.GetProperty("text").GetString(),
                     RetrievedAt = DateTime.UtcNow
 
                 };
