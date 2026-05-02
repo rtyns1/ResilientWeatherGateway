@@ -33,7 +33,7 @@ Circuit breaker closed	{"timestamp":"2026-04-20T10:36:00","event":"circuit_break
 It is meant to be read to analyyse patterns.
 Checks stuff like How often do the APIs disagree? Which API is faster How many times did the circuit breaker open?
 Format is in json where each line is a JSON obejct.
-Timestamp is not hardcoded because different eventsmight need different ttimestamp formats, the caller decides.
+Timestamp is not hardcoded because different events might need different ttimestamp formats, the caller decides.
 
 **These are passive tools, they are meant to be called. They wait for other code to write to them.Call their methods etc. Hence the name helpers.**
 
@@ -109,8 +109,8 @@ These are data containers, no logic at all.
 
 
  So, the logic is that the models are Data conteiners. THy are in aformat that program.cs expect. But remember the APIS all have different formats, so the service class
- /folder is where we deal with the data formatign of the specific APIs, make them into the fromat that the dta containers expect, ship the data to the data containers, and then they are shipped to 
- the program.cs. This is a rough explanation that i am about to clear up.
+ /folder is where we deal with the data formatign of the specific APIs, make them into the fromat that the dta containers expect, ship the data to the data containers,
+ and then they are shipped to the program.cs. This is a rough explanation that i am about to clear up.
 
 
  Layer	Job	What it does
@@ -700,3 +700,8 @@ You cannot be VAGUE with your error descriptions.
 
 
  so in the next topic we shall text error handling that is gracefulle, defensive and does not break encapsulation
+
+ **28th April**
+ SO, so far ive programme alot, but ive also gone a long time without writing in here.
+ The program is long done at this point, but i still need to document, explain how everything works, and the refractor with a polly circuit breaker.
+ Now, what is a polly circuit breaker and why do we need it?
