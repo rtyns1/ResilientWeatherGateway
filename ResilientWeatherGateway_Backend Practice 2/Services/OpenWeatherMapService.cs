@@ -1,4 +1,5 @@
 ﻿using AsyncDataAggregator__Backend_practice_1.Helpers;
+using AsyncDataAggregator__Backend_practice_1.Services;
 using ResilientWeatherGateway_Backend_Practice_2.Models;
 using ResilientWeatherGateway_Backend_Practice_2.Services;
 using System;
@@ -8,31 +9,34 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace ResilientWeatherGateway_Backend_Practice_2
+namespace ResilientWeatherGateway_Backend_Practice_2 .Services
 {
     public class OpenWeatherMapService : IWeatherService
     {
         private readonly HttpClient _httpClient;
-        // private readonly CircuitBreaker _circuitBreaker;  // OLD manual circuit breaker – commented out for learning
+        private readonly CircuitBreaker _circuitBreaker;  // circuit breaker instance if i am usin the manual circuitbreker
         private readonly string _apiKey;
         private readonly string _baseUrl;
 
         // OLD constructor with CircuitBreaker parameter – commented out
-        // public OpenWeatherMapService(HttpClient _httpClient, string _apiKey, string _baseUrl, CircuitBreaker _circuitBreaker)
-        // {
-        //     this._httpClient = _httpClient;
-        //     this._apiKey = _apiKey;
-        //     this._baseUrl = _baseUrl;
-        //     this._circuitBreaker = _circuitBreaker;
-        // }
+        // this constructor is used if i am using the manual circuit breker
+         public OpenWeatherMapService(HttpClient _httpClient, string _apiKey, string _baseUrl, CircuitBreaker _circuitBreaker)
+         {
+             this._httpClient = _httpClient;
+             this._apiKey = _apiKey;
+            this._baseUrl = _baseUrl;
+            this._circuitBreaker = _circuitBreaker;
+        }
 
-        // NEW constructor without CircuitBreaker (temporary, until you integrate Polly adapter)
+        // NEW constructor without CircuitBreaker. Does not use neiither manual nor polly.
+        /*
         public OpenWeatherMapService(HttpClient _httpClient, string _apiKey, string _baseUrl)
         {
             this._httpClient = _httpClient;
             this._apiKey = _apiKey;
             this._baseUrl = _baseUrl;
         }
+        */
 
         public async Task<WeatherData> GetWeatherAsync(string city)
         {
@@ -41,15 +45,22 @@ namespace ResilientWeatherGateway_Backend_Practice_2
                 string url = _baseUrl + "?q=" + city + "&units=metric&appid=" + _apiKey;
 
                 // ----- OLD MANUAL CIRCUIT BREAKER CODE (commented out for learning) -----
-                // string JsonString = await _circuitBreaker.ExecuteAsync<string>(async () =>
-                // {
-                //     return await _httpClient.GetStringAsync(url);
-                // });
+                // use this if im using the mnaual circuit breker
+                string JsonString = await _circuitBreaker.ExecuteAsync(async () =>
+                {
+                    return await RetryHandler.ExecuteWithRetry(
+                        async () => await _httpClient.GetStringAsync(url),
+                        maxRetries: 3
+                    );
+                });
                 // -------------------------------------------------------------------------
 
                 // ----- TEMPORARY DIRECT HTTP CALL (no circuit breaker) -----
+                //only use this if im not using a circuit breker
+                /*
                 string JsonString = await _httpClient.GetStringAsync(url);
                 // ------------------------------------------------------------
+                */
 
                 if (string.IsNullOrWhiteSpace(JsonString))
                 {

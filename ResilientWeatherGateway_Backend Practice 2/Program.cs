@@ -26,10 +26,12 @@ namespace ResilientWeatherGateway_Backend_Practice_2
                 var httpClient = new HttpClient();
 
                 // ----- OLD MANUAL CIRCUIT BREAKER (commented out for learning) -----
-                // var cbOpenWeather = new CircuitBreaker(msg => Console.WriteLine(msg));
-                // var cbWeatherApi = new CircuitBreaker(msg => Console.WriteLine(msg));
-                // var openWeatherService = new OpenWeatherMapService(httpClient, openWeatherApiKey, openWeatherBaseUrl, cbOpenWeather);
-                // var weatherApiService = new WeatherApiService(httpClient, weatherApiKey, weatherApiBaseUrl, cbWeatherApi);
+                var cbOpenWeather = new CircuitBreaker(msg => Console.WriteLine(msg));
+                var cbWeatherApi = new CircuitBreaker(msg => Console.WriteLine(msg));
+                var openWeatherService = new OpenWeatherMapService(httpClient, openWeatherApiKey, openWeatherBaseUrl, cbOpenWeather);
+                var weatherApiService = new WeatherApiService(httpClient, weatherApiKey, weatherApiBaseUrl, cbWeatherApi);
+
+
                 // -------------------------------------------------------------------
 
                 // ----- NEW POLLY CIRCUIT BREAKER (commented out for learning) -----
@@ -49,9 +51,11 @@ namespace ResilientWeatherGateway_Backend_Practice_2
                 // -------------------------------------------------------------------
 
                 // ----- TEMPORARY: DIRECT HTTP CALLS (NO CIRCUIT BREAKER) -----
+                /*
                 var openWeatherService = new OpenWeatherMapService(httpClient, openWeatherApiKey, openWeatherBaseUrl);
                 var weatherApiService = new WeatherApiService(httpClient, weatherApiKey, weatherApiBaseUrl);
                 // -------------------------------------------------------------
+                */
 
                 // Call both in parallel
                 var task1 = openWeatherService.GetWeatherAsync(city);

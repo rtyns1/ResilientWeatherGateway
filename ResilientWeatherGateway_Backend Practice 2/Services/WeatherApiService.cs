@@ -1,4 +1,5 @@
 ﻿using AsyncDataAggregator__Backend_practice_1.Helpers;
+using AsyncDataAggregator__Backend_practice_1.Services;
 using ResilientWeatherGateway_Backend_Practice_2.Models;
 using ResilientWeatherGateway_Backend_Practice_2.Services;
 using System;
@@ -13,26 +14,28 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
     public class WeatherApiService : IWeatherService
     {
         private readonly HttpClient _httpClient;
-        // private readonly CircuitBreaker _circuitBreaker;  // OLD manual circuit breaker – commented out for learning
+        private readonly CircuitBreaker _circuitBreaker;  // OLD manual circuit breaker – commented out for learning
         private readonly string _apiKey;
         private readonly string _baseUrl;
 
         // OLD constructor with CircuitBreaker parameter – commented out
-        // public WeatherApiService(HttpClient _httpClient, string _apiKey, string _baseUrl, CircuitBreaker _circuitBreaker)
-        // {
-        //     this._httpClient = _httpClient;
-        //     this._apiKey = _apiKey;
-        //     this._baseUrl = _baseUrl;
-        //     this._circuitBreaker = _circuitBreaker;
-        // }
+        public WeatherApiService(HttpClient _httpClient, string _apiKey, string _baseUrl, CircuitBreaker _circuitBreaker)
+         {
+             this._httpClient = _httpClient;
+           this._apiKey = _apiKey;
+            this._baseUrl = _baseUrl;
+            this._circuitBreaker = _circuitBreaker;
+         }
 
         // NEW constructor without CircuitBreaker (temporary, until you integrate Polly adapter)
+        /*
         public WeatherApiService(HttpClient _httpClient, string _apiKey, string _baseUrl)
         {
             this._httpClient = _httpClient;
             this._apiKey = _apiKey;
             this._baseUrl = _baseUrl;
         }
+        */
 
         public async Task<WeatherData> GetWeatherAsync(string city)
         {
@@ -40,18 +43,23 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
             {
                 string url = _baseUrl + "?key=" + _apiKey + "&q=" + city + "&aqi=no";
 
-                // ----- OLD MANUAL CIRCUIT BREAKER CODE (commented out for learning) -----
-                // string JsonString = await _circuitBreaker.ExecuteAsync<string>(async () =>
-                // {
-                //     return await _httpClient.GetStringAsync(url);
-                // });
+
+                string JsonString = await _circuitBreaker.ExecuteAsync(async () =>
+                {
+                    return await RetryHandler.ExecuteWithRetry(
+                        async () => await _httpClient.GetStringAsync(url),
+                        maxRetries: 3
+                    );
+                });
                 // -------------------------------------------------------------------------
 
                 // ----- TEMPORARY DIRECT HTTP CALL (no circuit breaker) -----
+                /*
                 string JsonString = await _httpClient.GetStringAsync(url);
                 // ------------------------------------------------------------
+                */
 
-                if (string.IsNullOrWhiteSpace(JsonString))
+                if (string.IsNullOrWhiteSpace(JsonString)) 
                 {
                     throw new Exception("Received empty response from WeatherApiService Api");
                 }
@@ -91,10 +99,11 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                 };
             }
             // OLD exception catch for BrokenCircuitException (commented out)
-            // catch (BrokenCircuitException ex)
-            // {
-            //     throw new Exception("Circuit breaker WeatherApiService is currently unavailable.");
-            // }
+            catch (BrokenCircuitException ex)
+            {
+                 throw new Exception("Circuit breaker WeatherApiService is currently unavailable.");
+            }
+            /*
             catch (HttpRequestException ex)
             {
                 await FileLogger.LogErrorAsync($"WeatherApiService HTTP request failed: {ex.Message}");
@@ -104,6 +113,7 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
             {
                 throw new Exception("Error parsing weather data.", ex);
             }
+            */
         }
     }
 }
