@@ -719,3 +719,5 @@ You cannot be VAGUE with your error descriptions.
  So, whats the next step? the retry handler is done.
  Next, refractor the API services to use the retry handler, and then makeit work with the manual circuit breaker first.
  Then, refractor to use the polly circuit breaker, and make sure it works with the retry handler as well.
+  
+  ** IF U CHANGE STUFF IN THE appsettings.development.json, the code runs into errors, and u can see boththe circuitbreker and retryhandler working together. **
