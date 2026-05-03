@@ -28,6 +28,7 @@ namespace AsyncDataAggregator__Backend_practice_1.Services
                     {
                         int delayInSeconds = (int)Math.Pow(2, retryCount + 1);
                         int delayInMilliseconds = delayInSeconds * 1000;
+                        Console.WriteLine($"Attempt {retryCount + 1} failed. Retrying in {delayInSeconds} seconds. ");
                         await Task.Delay(delayInMilliseconds);
 
                     }

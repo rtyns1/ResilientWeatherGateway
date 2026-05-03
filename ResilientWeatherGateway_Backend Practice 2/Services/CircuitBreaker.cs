@@ -12,7 +12,7 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
         HalfOpen // Testing :allows one call to see if an API recovered
     }
 
-    public class CircuitBreaker 
+    public class CircuitBreaker
     {
         private readonly int _failureThreshold = 3;
         private readonly int _openDurationSeconds = 30;
@@ -53,21 +53,23 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                  */
                 if (_state == Circuitstate.Open) // check if the state is open
                 {
+
                     //check if 30 seconds have passed
                     if (_openTime.HasValue && (DateTime.UtcNow - _openTime.Value).TotalSeconds >= _openDurationSeconds)
                     {
                         //if yes, move to HalfOpen
                         _state = Circuitstate.HalfOpen;
-                        _logger($"Circuit state changed : open --> HalfOpen");
+                        _logger($"🟡 Circuit state changed: Open --> HalfOpen. One test call allowed. Waiting for service recovery.");
 
                     }
                     else
                     {
                         //otherwise, if the circuit is still open, throw exception immediately.
-                        throw new BrokenCircuitException($"Circuit is OPEN for {_openDurationSeconds} seconds. Call blocked."); 
+                        _logger("🔴 Circuit OPEN! Service temporarily unavailable. Please wait 30 seconds before retrying.");
+                        throw new BrokenCircuitException($"Circuit is OPEN for {_openDurationSeconds} seconds. Call blocked.");
                     }
                 }
-            //step 2: try to executr the API call action
+                //step 2: try to executr the API call action
             }
 
             try
@@ -79,7 +81,7 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                     if (_state == Circuitstate.HalfOpen)
                     {
                         _state = Circuitstate.Closed;
-                        _logger($"Circuit state changed: HalfOpen --> Closed");
+                        _logger($"🟢 Circuit state changed: HalfOpen --> Closed. Service has recovered. Normal operation resumed.");
 
                     }
                     // reset the failure count
@@ -109,35 +111,30 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
                     if (_state == Circuitstate.HalfOpen)
                     {
                         _state = Circuitstate.Open;
-                        _logger($"Failure #{_failureCount} in Closed state: {ex.Message}");
-
+                        _logger($"❌ Test call failed in HALF-OPEN state. Circuit re‑opening for 30 seconds.");
                         throw;
-
-
                     }
                     _failureCount++;
-                    _logger($"Failure {_failureCount} in closed state: {ex.Message}");
+                    _logger($"⚠️ Failure #{_failureCount} (attempt {_failureCount} of {_failureThreshold}). Retrying...");
 
                     if (_failureCount > _failureThreshold)
                     {
                         _state = Circuitstate.Open;
                         _openTime = DateTime.UtcNow;
-
-                        _logger($"Circuitstate changed: closed --> open after {_failureCount} failures");
+                        _logger($"🔴 Circuit OPEN! Too many consecutive failures ({_failureCount}). Service will be unavailable for 30 seconds.");
                         throw;
                     }
-
                 }
                 throw;
             }
         }
     }
 
-    public class BrokenCircuitException: Exception
+    public class BrokenCircuitException : Exception
     {
         public BrokenCircuitException() { }
         public BrokenCircuitException(string message) : base(message) { }
-        public BrokenCircuitException (string message, Exception inner): base(message, inner) { }
+        public BrokenCircuitException(string message, Exception inner) : base(message, inner) { }
 
     }
     /*
@@ -169,6 +166,4 @@ catch (JsonException)
     *Testing – you can unit test the handling of each failure type independently.
     *
     */
-
-
 }
