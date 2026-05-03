@@ -180,7 +180,7 @@ Data	                        Why you need it
 Current state	            To know if you are Closed, Open, or HalfOpen
 Failure count	            To know when to open the circuit (only used in Closed state)
 Time when circuit opened	To know when 30 seconds have passed (only used in Open state)
-A lock object	            To prevent two threads from changing state at the same time
+A lock object	            To prevent two threads from changi ng state at the same time
 A logger (delegate)	        To record state changes for analysis
 
 **Step 3: Write the Constructor**
@@ -705,3 +705,17 @@ You cannot be VAGUE with your error descriptions.
  SO, so far ive programme alot, but ive also gone a long time without writing in here.
  The program is long done at this point, but i still need to document, explain how everything works, and the refractor with a polly circuit breaker.
  Now, what is a polly circuit breaker and why do we need it?
+
+
+ ----There is alot i havent written here but i will cover them or have already covered them as comments.
+ ---- In the code i have both a manual circuit breaker, and a polly one. But, i need to neaten how they run, and i also need to add a retry handler class.
+ ---- Why is having a retry handler important? It allows us to automatically retry failed API calls a certain number of times before giving up. 
+ ---- To avoid DDOSing the API, we can add a delay between retries, and also use an exponential backoff strategy where the delay increases after each failed attempt.
+ Those way we give the API time to recover and reduce the load on it. This is esepcially important for transient errors like network issues or rate limits, 
+ where a rretry might succeed if we wait a bit. It also improves the user experience by reducing the chances of a complete failure due to temporary issues.
+ ---- In short a retry handler + circuit breaker together create a more resilient system that can ahndle failures gracefully, giving the API a chance to recover 
+ while also protecting our application from excessive failurs.
+
+ So, whats the next step? the retry handler is done.
+ Next, refractor the API services to use the retry handler, and then makeit work with the manual circuit breaker first.
+ Then, refractor to use the polly circuit breaker, and make sure it works with the retry handler as well.
