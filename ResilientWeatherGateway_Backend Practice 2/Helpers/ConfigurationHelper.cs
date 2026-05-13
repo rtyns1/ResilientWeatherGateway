@@ -47,6 +47,16 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Helpers
                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
                .Build();
+
+            // the section above is called a fluent interface - it is chaining method calls together. Each method call returns the same object, so we can call another method on it immediately.
+            // We could also write it in a ismpler way:
+            // var builder = new ConfigurationBuilder():
+            // builder.SetBasePath(Directory.GetCurrentDirectory()):
+            // builder.AddJsonFile("appsettings.json", optional: false, reloadOnChange : true):
+            // builder.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange : true):
+            // _configuration = builder.Build();
+            // But the fluent interface is more concise and easier to read .
+            // the details on how to write this are in the Microsoft Documentation for ConfigurationBuilder
         }
         public T GetValue<T>(string key)
         {

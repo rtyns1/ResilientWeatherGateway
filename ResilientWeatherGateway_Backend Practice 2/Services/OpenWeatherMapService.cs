@@ -1,7 +1,6 @@
-﻿using AsyncDataAggregator__Backend_practice_1.Helpers;
-using AsyncDataAggregator__Backend_practice_1.Services;
-using ResilientWeatherGateway_Backend_Practice_2.Models;
+﻿using ResilientWeatherGateway_Backend_Practice_2.Helpers;
 using ResilientWeatherGateway_Backend_Practice_2.Services;
+using ResilientWeatherGateway_Backend_Practice_2.Models;
 using System;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
@@ -26,7 +25,7 @@ namespace ResilientWeatherGateway_Backend_Practice_2 .Services
              this._apiKey = _apiKey;
             this._baseUrl = _baseUrl;
             this._circuitBreaker = _circuitBreaker;
-        }
+         }
 
         // NEW constructor without CircuitBreaker. Does not use neiither manual nor polly.
         /*

@@ -2,7 +2,7 @@
 using System.Text;
 using System.IO;
 
-namespace AsyncDataAggregator__Backend_practice_1.Helpers
+namespace ResilientWeatherGateway_Backend_Practice_2.Helpers
 {
     public static class FileLogger
     {

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AsyncDataAggregator__Backend_practice_1.Services
+namespace ResilientWeatherGateway_Backend_Practice_2.Services
 {
     public class RetryHandler
     {

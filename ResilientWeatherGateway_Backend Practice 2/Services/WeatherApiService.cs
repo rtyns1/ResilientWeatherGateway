@@ -1,8 +1,6 @@
-﻿using AsyncDataAggregator__Backend_practice_1.Helpers;
-using AsyncDataAggregator__Backend_practice_1.Services;
-using ResilientWeatherGateway_Backend_Practice_2.Models;
+﻿using ResilientWeatherGateway_Backend_Practice_2.Helpers;
 using ResilientWeatherGateway_Backend_Practice_2.Services;
-using System;
+using ResilientWeatherGateway_Backend_Practice_2.Models;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
@@ -20,12 +18,12 @@ namespace ResilientWeatherGateway_Backend_Practice_2.Services
 
         // OLD constructor with CircuitBreaker parameter – commented out
         public WeatherApiService(HttpClient _httpClient, string _apiKey, string _baseUrl, CircuitBreaker _circuitBreaker)
-         {
+        {
              this._httpClient = _httpClient;
            this._apiKey = _apiKey;
             this._baseUrl = _baseUrl;
             this._circuitBreaker = _circuitBreaker;
-         }
+        }
 
         // NEW constructor without CircuitBreaker (temporary, until you integrate Polly adapter)
         /*
